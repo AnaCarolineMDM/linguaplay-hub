@@ -1,4 +1,5 @@
 import { Gamepad2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const FooterSection = () => {
   return (
@@ -22,6 +23,12 @@ const FooterSection = () => {
                 {item}
               </a>
             ))}
+            <Link
+              to="/professor"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium"
+            >
+              Área do Professor
+            </Link>
           </nav>
 
           <p className="text-sm text-muted-foreground">
