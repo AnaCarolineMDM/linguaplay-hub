@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const CTASection = () => {
   return (
@@ -31,11 +32,14 @@ const CTASection = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
+                asChild
                 size="lg"
                 className="bg-primary-foreground text-primary font-bold text-lg px-8 hover:bg-primary-foreground/90 transition-colors"
               >
-                Conheça a plataforma
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <Link to="/game">
+                  Experimentar Mini Game
+                  <Gamepad2 className="ml-2 w-5 h-5" />
+                </Link>
               </Button>
               <Button
                 size="lg"
