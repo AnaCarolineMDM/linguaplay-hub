@@ -9,6 +9,7 @@ import {
   BarChart3,
   Users,
   FileSpreadsheet,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ const Teacher = () => {
   const [password, setPassword] = useState("");
   const [pwError, setPwError] = useState("");
   const [sessions, setSessions] = useState<GameSession[]>([]);
+  const [filterTurma, setFilterTurma] = useState("");
 
   const handleLogin = () => {
     if (password === TEACHER_PASSWORD) {
@@ -64,14 +66,26 @@ const Teacher = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Turmas disponíveis
+  const turmas = useMemo(() => {
+    const set = new Set(sessions.map((s) => s.turma || "-"));
+    return Array.from(set).sort();
+  }, [sessions]);
+
+  // Sessões filtradas
+  const filtered = useMemo(() => {
+    if (!filterTurma) return sessions;
+    return sessions.filter((s) => (s.turma || "-") === filterTurma);
+  }, [sessions, filterTurma]);
+
   // Métricas agregadas
   const stats = useMemo(() => {
-    if (sessions.length === 0) return null;
-    const uniqueRAs = new Set(sessions.map((s) => s.ra)).size;
-    const avgAccuracy = Math.round(sessions.reduce((sum, s) => sum + s.accuracy, 0) / sessions.length);
-    const avgScore = Math.round(sessions.reduce((sum, s) => sum + s.totalScore, 0) / sessions.length);
-    return { total: sessions.length, uniqueRAs, avgAccuracy, avgScore };
-  }, [sessions]);
+    if (filtered.length === 0) return null;
+    const uniqueRAs = new Set(filtered.map((s) => s.ra)).size;
+    const avgAccuracy = Math.round(filtered.reduce((sum, s) => sum + s.accuracy, 0) / filtered.length);
+    const avgScore = Math.round(filtered.reduce((sum, s) => sum + s.totalScore, 0) / filtered.length);
+    return { total: filtered.length, uniqueRAs, avgAccuracy, avgScore };
+  }, [filtered]);
 
   // Tela de login
   if (!authenticated) {
@@ -79,55 +93,32 @@ const Teacher = () => {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-sm font-body font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
+            <Link to="/" className="flex items-center gap-2 text-sm font-body font-semibold text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4" /> Voltar
             </Link>
-            <span className="font-display font-bold text-foreground text-lg">
-              👩‍🏫 Área do Professor
-            </span>
+            <span className="font-display font-bold text-foreground text-lg">👩‍🏫 Área do Professor</span>
             <div className="w-16" />
           </div>
         </header>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex-1 flex items-center justify-center px-4"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1 flex items-center justify-center px-4">
           <Card className="w-full max-w-sm border-border">
             <CardContent className="p-8 text-center">
               <Lock className="w-12 h-12 mx-auto mb-4 text-primary" />
-              <h2 className="font-display font-bold text-2xl text-foreground mb-2">
-                Acesso Restrito
-              </h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Digite a senha para acessar os dados educacionais.
-              </p>
+              <h2 className="font-display font-bold text-2xl text-foreground mb-2">Acesso Restrito</h2>
+              <p className="text-sm text-muted-foreground mb-6">Digite a senha para acessar os dados educacionais.</p>
               <Input
                 type="password"
                 value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (pwError) setPwError("");
-                }}
+                onChange={(e) => { setPassword(e.target.value); if (pwError) setPwError(""); }}
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 placeholder="Senha do professor"
                 maxLength={50}
                 className="text-center rounded-xl mb-3"
               />
-              {pwError && (
-                <p className="text-sm text-destructive font-body font-semibold mb-3">{pwError}</p>
-              )}
-              <Button onClick={handleLogin} className="w-full rounded-xl gradient-hero text-primary-foreground">
-                Entrar
-              </Button>
-              <p className="text-xs text-muted-foreground mt-4">
-                Senha padrão para demonstração: <strong>professor123</strong>
-              </p>
+              {pwError && <p className="text-sm text-destructive font-body font-semibold mb-3">{pwError}</p>}
+              <Button onClick={handleLogin} className="w-full rounded-xl gradient-hero text-primary-foreground">Entrar</Button>
+              <p className="text-xs text-muted-foreground mt-4">Senha padrão para demonstração: <strong>professor123</strong></p>
             </CardContent>
           </Card>
         </motion.div>
@@ -140,28 +131,45 @@ const Teacher = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-sm font-body font-semibold text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar
+          <Link to="/" className="flex items-center gap-2 text-sm font-body font-semibold text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Voltar
           </Link>
-          <span className="font-display font-bold text-foreground text-lg">
-            👩‍🏫 Área do Professor
-          </span>
+          <span className="font-display font-bold text-foreground text-lg">👩‍🏫 Área do Professor</span>
           <div className="w-16" />
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Filtro por turma */}
+        {turmas.length > 1 && (
+          <div className="flex items-center gap-3 mb-6 flex-wrap">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-body font-semibold text-foreground">Turma:</span>
+            <button
+              onClick={() => setFilterTurma("")}
+              className={`px-3 py-1 rounded-lg text-sm font-body font-bold transition-all border ${
+                !filterTurma ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/50"
+              }`}
+            >
+              Todas
+            </button>
+            {turmas.map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilterTurma(t)}
+                className={`px-3 py-1 rounded-lg text-sm font-body font-bold transition-all border ${
+                  filterTurma === t ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Métricas */}
         {stats && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             {[
               { icon: Users, label: "Alunos Únicos", value: stats.uniqueRAs, color: "text-primary" },
               { icon: FileSpreadsheet, label: "Sessões", value: stats.total, color: "text-secondary" },
@@ -184,8 +192,7 @@ const Teacher = () => {
             disabled={sessions.length === 0}
             className="gap-2 rounded-xl gradient-hero text-primary-foreground"
           >
-            <Download className="w-4 h-4" />
-            Exportar Resumo (CSV)
+            <Download className="w-4 h-4" /> Exportar Resumo (CSV)
           </Button>
           <Button
             onClick={() => downloadCSV(exportDetailedCSV(), "linguaplay_detalhado.csv")}
@@ -193,8 +200,7 @@ const Teacher = () => {
             variant="outline"
             className="gap-2 rounded-xl"
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            Exportar Detalhado (CSV)
+            <FileSpreadsheet className="w-4 h-4" /> Exportar Detalhado (CSV)
           </Button>
           <Button
             onClick={handleClear}
@@ -202,17 +208,18 @@ const Teacher = () => {
             variant="outline"
             className="gap-2 rounded-xl text-destructive border-destructive/30 hover:bg-destructive/10"
           >
-            <Trash2 className="w-4 h-4" />
-            Resetar Dados
+            <Trash2 className="w-4 h-4" /> Resetar Dados
           </Button>
         </div>
 
         {/* Tabela de sessões */}
-        {sessions.length === 0 ? (
+        {filtered.length === 0 ? (
           <Card className="border-border">
             <CardContent className="p-12 text-center">
               <p className="text-muted-foreground text-lg">
-                Nenhum dado coletado ainda. Os dados aparecerão aqui quando os alunos jogarem.
+                {sessions.length === 0
+                  ? "Nenhum dado coletado ainda. Os dados aparecerão aqui quando os alunos jogarem."
+                  : "Nenhum resultado encontrado para esta turma."}
               </p>
             </CardContent>
           </Card>
@@ -221,7 +228,9 @@ const Teacher = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Turma</TableHead>
                   <TableHead>RA</TableHead>
+                  <TableHead>Nível</TableHead>
                   <TableHead>Idioma</TableHead>
                   <TableHead>Data/Hora</TableHead>
                   <TableHead className="text-right">Pontuação</TableHead>
@@ -230,9 +239,11 @@ const Teacher = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sessions.map((s, i) => (
+                {filtered.map((s, i) => (
                   <TableRow key={i}>
+                    <TableCell className="font-body font-bold">{s.turma || "-"}</TableCell>
                     <TableCell className="font-body font-bold">{s.ra}</TableCell>
+                    <TableCell>{s.level === "infantil" ? "👶 Infantil" : "🧑‍🎓 Médio"}</TableCell>
                     <TableCell>{s.language === "english" ? "🇺🇸 Inglês" : "🇪🇸 Espanhol"}</TableCell>
                     <TableCell className="text-muted-foreground">{s.timestamp}</TableCell>
                     <TableCell className="text-right font-bold text-primary">{s.totalScore}</TableCell>
