@@ -4,28 +4,20 @@ import { Volume2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  WordItem,
+  PhraseItem,
   Language,
-  getWordInLanguage,
   getSpeechLang,
-  generateInfantilOptions,
+  generateMedioOptions,
 } from "@/data/gameData";
+import { RoundResult } from "./GameRound";
 
-export interface RoundResult {
-  wordId: number;
-  correct: boolean;
-  attempts: number;
-  timeMs: number;
-}
-
-interface GameRoundProps {
-  items: WordItem[];
+interface GameRoundMedioProps {
+  items: PhraseItem[];
   language: Language;
   onFinish: (results: RoundResult[]) => void;
 }
 
-// Nível Infantil: 3 alternativas, associação imagem + áudio + palavra
-const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
+const GameRoundMedio = ({ items, language, onFinish }: GameRoundMedioProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [options, setOptions] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -37,26 +29,33 @@ const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
   const [streak, setStreak] = useState(0);
 
   const currentItem = items[currentIndex];
-  const correctAnswer = getWordInLanguage(currentItem, language);
+  const correctAnswer = language === "english"
+    ? currentItem.correctAnswer.english
+    : currentItem.correctAnswer.spanish;
+  const phraseText = language === "english"
+    ? currentItem.phrase.english
+    : currentItem.phrase.spanish;
+  const questionText = language === "english"
+    ? currentItem.question.english
+    : currentItem.question.spanish;
   const totalRounds = items.length;
 
   useEffect(() => {
-    import("@/data/gameData").then(({ vocabulary }) => {
-      setOptions(generateInfantilOptions(currentItem, vocabulary, language));
-      setStartTime(Date.now());
-      setSelected(null);
-      setIsCorrect(null);
-      setAttempts(1);
-    });
+    setOptions(generateMedioOptions(currentItem, language));
+    setStartTime(Date.now());
+    setSelected(null);
+    setIsCorrect(null);
+    setAttempts(1);
   }, [currentIndex, currentItem, language]);
 
+  // Text-to-Speech para a frase
   const speak = useCallback(() => {
-    const utterance = new SpeechSynthesisUtterance(correctAnswer);
+    const utterance = new SpeechSynthesisUtterance(phraseText);
     utterance.lang = getSpeechLang(language);
-    utterance.rate = 0.8;
+    utterance.rate = 0.85;
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
-  }, [correctAnswer, language]);
+  }, [phraseText, language]);
 
   useEffect(() => {
     const timer = setTimeout(speak, 400);
@@ -65,6 +64,7 @@ const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
 
   const handleSelect = (option: string) => {
     if (isCorrect === true) return;
+
     setSelected(option);
     const correct = option === correctAnswer;
     setIsCorrect(correct);
@@ -97,8 +97,8 @@ const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
   const progress = (currentIndex / totalRounds) * 100;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
-      {/* Barra de progresso e pontuação */}
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      {/* Barra de progresso */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-body font-semibold text-muted-foreground">
@@ -116,37 +116,47 @@ const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
         <Progress value={progress} className="h-3 rounded-full" />
       </div>
 
+      {/* Card da questão */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
-          className="bg-card rounded-3xl shadow-card p-8 text-center border border-border"
+          className="bg-card rounded-3xl shadow-card p-6 md:p-8 border border-border"
         >
-          <div className="text-8xl mb-4 select-none">{currentItem.emoji}</div>
-          <p className="text-sm text-muted-foreground mb-1">
-            Em português: <strong>{currentItem.portuguese}</strong>
-          </p>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={speak}
-            className="gap-2 rounded-xl mt-2 mb-6 border-primary/30 text-primary hover:bg-primary/10"
-          >
-            <Volume2 className="w-5 h-5" />
-            Ouvir pronúncia
-          </Button>
-          <p className="font-display font-bold text-xl text-foreground mb-5">
-            Qual é a palavra em {language === "english" ? "inglês" : "espanhol"}?
+          {/* Frase / Contexto */}
+          <div className="bg-muted/50 rounded-2xl p-4 mb-4 border border-border">
+            <p className="text-base md:text-lg font-body text-foreground italic leading-relaxed">
+              "{phraseText}"
+            </p>
+          </div>
+
+          {/* Botão de áudio */}
+          <div className="text-center mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={speak}
+              className="gap-2 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <Volume2 className="w-4 h-4" />
+              Ouvir frase
+            </Button>
+          </div>
+
+          {/* Pergunta */}
+          <p className="font-display font-bold text-lg md:text-xl text-foreground mb-5 text-center">
+            {questionText}
           </p>
 
-          {/* 3 alternativas para Infantil */}
-          <div className="grid grid-cols-1 gap-3">
+          {/* Opções (4 alternativas) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {options.map((option) => {
               const isThis = selected === option;
               const showCorrect = isCorrect === true && option === correctAnswer;
               const showWrong = isThis && isCorrect === false;
+
               return (
                 <motion.button
                   key={option}
@@ -154,16 +164,19 @@ const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
                   onClick={() => handleSelect(option)}
                   disabled={isCorrect === true}
                   className={`
-                    p-4 rounded-2xl text-lg font-body font-bold transition-all border-2
-                    ${showCorrect ? "bg-success/15 border-success text-success"
-                      : showWrong ? "bg-destructive/15 border-destructive text-destructive"
-                      : "bg-muted/50 border-border text-foreground hover:border-primary hover:bg-primary/5"}
+                    p-4 rounded-2xl text-sm md:text-base font-body font-bold transition-all border-2 text-left
+                    ${showCorrect
+                      ? "bg-success/15 border-success text-success"
+                      : showWrong
+                      ? "bg-destructive/15 border-destructive text-destructive"
+                      : "bg-muted/50 border-border text-foreground hover:border-primary hover:bg-primary/5"
+                    }
                     disabled:cursor-default
                   `}
                 >
-                  <span className="flex items-center justify-center gap-2">
-                    {showCorrect && <CheckCircle2 className="w-5 h-5" />}
-                    {showWrong && <XCircle className="w-5 h-5" />}
+                  <span className="flex items-center gap-2">
+                    {showCorrect && <CheckCircle2 className="w-5 h-5 shrink-0" />}
+                    {showWrong && <XCircle className="w-5 h-5 shrink-0" />}
                     {option}
                   </span>
                 </motion.button>
@@ -176,4 +189,4 @@ const GameRound = ({ items, language, onFinish }: GameRoundProps) => {
   );
 };
 
-export default GameRound;
+export default GameRoundMedio;

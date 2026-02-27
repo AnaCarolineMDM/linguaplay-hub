@@ -1,10 +1,12 @@
 // Armazenamento local dos resultados do jogo para fins de demonstração (PoC)
 
 import { RoundResult } from "@/components/game/GameRound";
-import { Language } from "@/data/gameData";
+import { Language, Level } from "@/data/gameData";
 
 export interface GameSession {
   ra: string;
+  turma: string;
+  level: Level;
   language: Language;
   results: RoundResult[];
   totalScore: number;
@@ -35,13 +37,15 @@ export function clearAllSessions(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-// Exporta CSV dos dados coletados
+// Exporta CSV resumo dos dados coletados
 export function exportSessionsCSV(): string {
   const sessions = getAllSessions();
   if (sessions.length === 0) return "";
 
   const headers = [
+    "Turma",
     "RA",
+    "Nível",
     "Idioma",
     "Data/Hora",
     "Pontuação",
@@ -50,12 +54,16 @@ export function exportSessionsCSV(): string {
     "Tempo Médio (s)",
     "Total Questões",
     "Acertos 1ª Tentativa",
+    "Erros",
   ];
 
   const rows = sessions.map((s) => {
     const firstTry = s.results.filter((r) => r.attempts === 1).length;
+    const errors = s.results.length - firstTry;
     return [
+      s.turma || "-",
       s.ra,
+      s.level === "infantil" ? "Infantil/Fund." : "Ensino Médio",
       s.language === "english" ? "Inglês" : "Espanhol",
       s.timestamp,
       s.totalScore,
@@ -64,6 +72,7 @@ export function exportSessionsCSV(): string {
       (s.avgTimeMs / 1000).toFixed(1),
       s.results.length,
       firstTry,
+      errors,
     ].join(",");
   });
 
@@ -76,10 +85,12 @@ export function exportDetailedCSV(): string {
   if (sessions.length === 0) return "";
 
   const headers = [
+    "Turma",
     "RA",
+    "Nível",
     "Idioma",
     "Data/Hora",
-    "ID Palavra",
+    "ID Questão",
     "Acertou",
     "Tentativas",
     "Tempo (s)",
@@ -90,7 +101,9 @@ export function exportDetailedCSV(): string {
     s.results.forEach((r) => {
       rows.push(
         [
+          s.turma || "-",
           s.ra,
+          s.level === "infantil" ? "Infantil/Fund." : "Ensino Médio",
           s.language === "english" ? "Inglês" : "Espanhol",
           s.timestamp,
           r.wordId,
