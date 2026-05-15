@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Gamepad2 } from "lucide-react";
+import { Menu, X, Gamepad2, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,7 +23,7 @@ const Header = () => {
           <span className="font-display text-xl font-bold text-foreground">LinguaPlay</span>
         </a>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-6">
           {links.map((l) => (
             <a
               key={l.href}
@@ -32,8 +33,18 @@ const Header = () => {
               {l.label}
             </a>
           ))}
-          <Button className="gradient-hero text-primary-foreground font-bold shadow-hero hover:opacity-90 transition-opacity">
-            Conheça a plataforma
+          <Link
+            to="/professor"
+            className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+          >
+            <GraduationCap className="w-4 h-4" />
+            Área do Professor
+          </Link>
+          <Button asChild className="gradient-hero text-primary-foreground font-bold shadow-hero hover:opacity-90 transition-opacity">
+            <Link to="/game">
+              <Gamepad2 className="w-4 h-4 mr-1.5" />
+              Jogar agora
+            </Link>
           </Button>
         </nav>
 
@@ -65,8 +76,19 @@ const Header = () => {
                   {l.label}
                 </a>
               ))}
-              <Button className="gradient-hero text-primary-foreground font-bold w-full">
-                Conheça a plataforma
+              <Link
+                to="/professor"
+                className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                onClick={() => setMobileOpen(false)}
+              >
+                <GraduationCap className="w-4 h-4" />
+                Área do Professor
+              </Link>
+              <Button asChild className="gradient-hero text-primary-foreground font-bold w-full">
+                <Link to="/game" onClick={() => setMobileOpen(false)}>
+                  <Gamepad2 className="w-4 h-4 mr-1.5" />
+                  Jogar agora
+                </Link>
               </Button>
             </nav>
           </motion.div>
